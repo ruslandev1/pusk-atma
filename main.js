@@ -63,71 +63,44 @@ async function toggleTeamAssignment(teamIndex) {
     const team = teams[teamIndex];
     
     if (!assignedTeams.has(team)) {
+        const totalAssigned = assignedTeams.size;
+
         // Determine which groups are available
         let availableGroups = groups.filter(group => {
-            const isNotFull = groupAssignments[group].length < Math.ceil(31 / 3);
-            
+            const isNotFull = groupAssignments[group].length < 11;
             const adjacentNotInGroup = 
                 !groupAssignments[group].includes(teams[teamIndex - 1]) && 
                 !groupAssignments[group].includes(teams[teamIndex + 1]);
             
-            return isNotFull && (assignedTeams.size < 30 ? adjacentNotInGroup : true);
+            return isNotFull && (totalAssigned < 30 ? adjacentNotInGroup : true);
         });
         
         if (availableGroups.length > 0) {
-            // Calculate the minimum group size
-            const minGroupSize = Math.min(...groups.map(g => groupAssignments[g].length));
+            // Sort available groups by size (ascending)
+            availableGroups.sort((a, b) => groupAssignments[a].length - groupAssignments[b].length);
             
-            // Filter groups that are within 1 of the minimum size
-            const balancedGroups = availableGroups.filter(g => 
-                groupAssignments[g].length <= minGroupSize + 1
-            );
+            // Select from the groups with the fewest teams
+            const minSize = groupAssignments[availableGroups[0]].length;
+            const candidateGroups = availableGroups.filter(group => groupAssignments[group].length === minSize);
             
-            // Assign weights to the balanced groups
-            let weights = balancedGroups.map(group => {
-                if (group === lastAssignedGroup) {
-                    return 1; // Lower weight for the last assigned group
-                } else {
-                    return 10 - groupConsecutiveCount[group] * 3; // Higher weight for less recently used groups
-                }
-            });
-            
-            // Choose a group randomly based on weights
-            let totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-            let randomWeight = Math.random() * totalWeight;
-            let chosenGroup;
-            
-            for (let i = 0; i < balancedGroups.length; i++) {
-                if (randomWeight < weights[i]) {
-                    chosenGroup = balancedGroups[i];
-                    break;
-                }
-                randomWeight -= weights[i];
-            }
+            // Randomly select from candidate groups
+            const chosenGroup = candidateGroups[Math.floor(Math.random() * candidateGroups.length)];
             
             groupAssignments[chosenGroup].push(team);
             assignedTeams.add(team);
-            
-            groups.forEach(group => {
-                if (group === chosenGroup) {
-                    groupConsecutiveCount[group]++;
-                } else {
-                    groupConsecutiveCount[group] = 0;
-                }
-            });
             
             lastAssignedGroup = chosenGroup;
             lastAssignedTeamIndex = teamIndex;
 
             // Play the sound when a team is successfully assigned
             pinSound.currentTime = 0; // Reset the audio to the beginning
-            pinSound.play().catch(error => console.log('Error playing sound:', error));
+            await pinSound.play().catch(error => console.log('Error playing sound:', error));
             
             // Permanently disable the assigned team
             const teamElement = document.querySelectorAll('.team')[teamIndex];
             teamElement.classList.add('assigned');
         } else {
-            alert("All groups are full or no valid assignments available.");
+            alert("No valid assignments available. Try assigning to other groups first.");
         }
     }
 
