@@ -9,7 +9,7 @@ const teams = [
     "Dəmir Yumruq 2",
     "Aslan",
     "Enerji",
-    "AvroRare",
+    "Flaqman",
     "Bizon Pərakəndə",
     "Laboratoriya",
     "Lawyers",
