@@ -14,6 +14,7 @@ const teams = [
     "Laboratoriya",
     "Lawyers",
     "Strikers",
+    "Dragons",
     "The visionaries",
     "Şedevr",
     "Bizon",
